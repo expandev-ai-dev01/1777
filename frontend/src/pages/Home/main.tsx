@@ -1,15 +1,27 @@
 import { useState } from 'react';
 import { usePasswordValidation } from '@/domain/passwordValidation/hooks/usePasswordValidation';
+import { usePasswordClassification } from '@/domain/passwordClassification/hooks/usePasswordClassification';
 import {
   PasswordInput,
   PasswordStrengthIndicator,
   PasswordCriteriaList,
   PasswordFeedback,
 } from '@/domain/passwordValidation/components';
+import { PasswordSecurityIndicator } from '@/domain/passwordClassification/components';
 
 export const HomePage = () => {
   const [password, setPassword] = useState('');
   const { validatePassword, validationResult, isValidating, error } = usePasswordValidation();
+  const { classifyPassword, classificationResult, isClassifying } = usePasswordClassification();
+
+  const handlePasswordChange = (newPassword: string) => {
+    setPassword(newPassword);
+  };
+
+  const handleValidate = (pwd: string) => {
+    validatePassword(pwd);
+    classifyPassword(pwd);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -22,11 +34,21 @@ export const HomePage = () => {
         <div className="space-y-6">
           <PasswordInput
             value={password}
-            onChange={setPassword}
-            onValidate={validatePassword}
-            isValidating={isValidating}
+            onChange={handlePasswordChange}
+            onValidate={handleValidate}
+            isValidating={isValidating || isClassifying}
             error={error}
           />
+
+          {classificationResult && (
+            <PasswordSecurityIndicator
+              securityLevel={classificationResult.securityLevel}
+              securityScore={classificationResult.securityScore}
+              colorIndicator={classificationResult.colorIndicator}
+              indicatorSize={classificationResult.indicatorSize}
+              showIndicator={classificationResult.showIndicator}
+            />
+          )}
 
           {validationResult && (
             <>

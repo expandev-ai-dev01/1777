@@ -3,7 +3,7 @@ export * from './hooks/usePasswordValidation';
 export * from './services';
 export * from './types';
 
-export const moduleMetadata = {
+export const passwordValidationModuleMetadata = {
   name: 'passwordValidation',
   domain: 'functional',
   version: '1.0.0',
