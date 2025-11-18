@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePasswordValidation } from '@/domain/passwordValidation/hooks/usePasswordValidation';
 import { usePasswordClassification } from '@/domain/passwordClassification/hooks/usePasswordClassification';
+import { usePasswordFeedback } from '@/domain/passwordFeedback/hooks/usePasswordFeedback';
 import {
   PasswordInput,
   PasswordStrengthIndicator,
@@ -8,20 +9,57 @@ import {
   PasswordFeedback,
 } from '@/domain/passwordValidation/components';
 import { PasswordSecurityIndicator } from '@/domain/passwordClassification/components';
+import { PasswordFeedbackList } from '@/domain/passwordFeedback/components';
+import { useDebounce } from '@/core/hooks/useDebounce';
 
 export const HomePage = () => {
   const [password, setPassword] = useState('');
-  const { validatePassword, validationResult, isValidating, error } = usePasswordValidation();
-  const { classifyPassword, classificationResult, isClassifying } = usePasswordClassification();
+  const debouncedPassword = useDebounce(password, 500);
+
+  const {
+    validatePassword,
+    validationResult,
+    isValidating,
+    error: validationError,
+    clearResult: clearValidationResult,
+  } = usePasswordValidation();
+  const {
+    classifyPassword,
+    classificationResult,
+    isClassifying,
+    clearResult: clearClassificationResult,
+  } = usePasswordClassification();
+  const { getFeedbackMutation } = usePasswordFeedback();
 
   const handlePasswordChange = (newPassword: string) => {
     setPassword(newPassword);
+    getFeedbackMutation.mutate({ password: newPassword });
+
+    if (newPassword.length === 0) {
+      clearValidationResult();
+      clearClassificationResult();
+      getFeedbackMutation.reset();
+    }
   };
 
-  const handleValidate = (pwd: string) => {
-    validatePassword(pwd);
-    classifyPassword(pwd);
-  };
+  useEffect(() => {
+    if (debouncedPassword.length >= 4) {
+      validatePassword(debouncedPassword);
+      classifyPassword(debouncedPassword);
+    } else {
+      clearValidationResult();
+      clearClassificationResult();
+    }
+  }, [
+    debouncedPassword,
+    validatePassword,
+    classifyPassword,
+    clearValidationResult,
+    clearClassificationResult,
+  ]);
+
+  const isProcessing = isValidating || isClassifying;
+  const feedbackListIsVisible = password.length > 0 && getFeedbackMutation.data != null;
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -35,10 +73,16 @@ export const HomePage = () => {
           <PasswordInput
             value={password}
             onChange={handlePasswordChange}
-            onValidate={handleValidate}
-            isValidating={isValidating || isClassifying}
-            error={error}
+            isProcessing={isProcessing}
+            error={validationError}
           />
+
+          {getFeedbackMutation.data && (
+            <PasswordFeedbackList
+              criteria={getFeedbackMutation.data}
+              isVisible={feedbackListIsVisible}
+            />
+          )}
 
           {classificationResult && (
             <PasswordSecurityIndicator

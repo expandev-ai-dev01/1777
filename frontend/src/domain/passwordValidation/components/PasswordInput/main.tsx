@@ -1,29 +1,8 @@
-import { useState, useEffect } from 'react';
 import type { PasswordInputProps } from './types';
 
-export const PasswordInput = ({
-  value,
-  onChange,
-  onValidate,
-  isValidating,
-  error,
-}: PasswordInputProps) => {
-  const [localValue, setLocalValue] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localValue.length >= 4) {
-        onValidate(localValue);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [localValue, onValidate]);
-
+export const PasswordInput = ({ value, onChange, isProcessing, error }: PasswordInputProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    onChange(newValue);
+    onChange(e.target.value);
   };
 
   return (
@@ -34,14 +13,14 @@ export const PasswordInput = ({
       <input
         id="password-input"
         type="password"
-        value={localValue}
+        value={value}
         onChange={handleChange}
         placeholder="Digite uma senha para validar"
         className="w-full rounded-md border border-gray-300 px-4 py-2 text-base focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={isValidating}
+        disabled={isProcessing}
       />
       {error && <p className="mt-2 text-sm text-red-600">{error.message}</p>}
-      {localValue.length > 0 && localValue.length < 4 && (
+      {value.length > 0 && value.length < 4 && (
         <p className="mt-2 text-sm text-gray-500">
           A senha deve ter pelo menos 4 caracteres para ser analisada
         </p>
